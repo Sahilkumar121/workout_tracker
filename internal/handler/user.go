@@ -35,7 +35,7 @@ func NewUserHandler(db *pgxpool.Pool, logger *slog.Logger, secreteKey string) *U
 
 // register user
 
-func (register *UserHandler) ResgisterUser(w http.ResponseWriter, r *http.Request) {
+func (register *UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	// context request id
 	requestID := middleware.RequestIDFromContext(r.Context())
 	// store in struct

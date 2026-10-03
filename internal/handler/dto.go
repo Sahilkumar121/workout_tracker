@@ -59,3 +59,15 @@ type WorkoutResponse struct {
 type WorkoutRequestByName struct {
 	WorkoutName string `json:"workout_name" validate:"required"`
 }
+
+type ExerciseRequest struct {
+	ExerciseName string `json:"exercise_name" validate:"required"`
+	TargetMuscle string `json:"target_muscle,omitempty"`
+}
+
+type ExerciseResponse struct {
+	Id           string     `json:"id"`
+	ExerciseName string     `json:"exercise_name"`
+	TargetMuscle string     `json:"target_muscle"`
+	CreatedAt    *time.Time `json:"created_at"`
+}

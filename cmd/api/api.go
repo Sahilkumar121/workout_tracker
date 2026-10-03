@@ -42,8 +42,8 @@ func main() {
 	workout := handler.NewWorkoutHandler(pgDB, logger)
 
 	// api
-	mux.HandleFunc("GET /healthz", handler.ChechHealth)
-	mux.HandleFunc("POST /user/register", user.ResgisterUser)
+	mux.HandleFunc("GET /health", handler.CheckHealth)
+	mux.HandleFunc("POST /user/register", user.RegisterUser)
 	mux.HandleFunc("POST /user/login", user.LoginUser)
 
 	// user api
