@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -84,7 +85,7 @@ func (h *ExerciseHandler) GetExerciseByID(w http.ResponseWriter, r *http.Request
 
 	exerciseID := r.PathValue("id")
 
-	query := `select id, exercise_name, target_muscle, created_at from exercises where id=%s`
+	query := `select id, exercise_name, target_muscle, created_at from exercises where id=$1`
 
 	rows := h.DB.QueryRow(r.Context(), query, exerciseID)
 
@@ -96,4 +97,53 @@ func (h *ExerciseHandler) GetExerciseByID(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+}
+
+// * this method is using query parameter for exercise_name and target_muscle
+func (h *ExerciseHandler) GetExerciseByQuery(w http.ResponseWriter, r *http.Request) {
+	requestID := middleware.RequestIDFromContext(r.Context())
+
+	exerciseName := r.URL.Query().Get("name")
+	targetMuscle := r.URL.Query().Get("muscle")
+
+	query := `select id, exercise_name, target_muscle, created_at from exercise`
+	args := []any{}
+
+	if exerciseName != "" && targetMuscle != "" {
+		query += fmt.Sprintf(` where exercise_name ilike '%%' || $%d || '%%' and target_muscle ilike '%%' || $%d || '%%'`, 1, 2)
+		args = append(args, exerciseName, targetMuscle)
+	} else if exerciseName != "" {
+		query += fmt.Sprintf(` where exercise_name ilike '%%' || $%d || '%%'`, 1)
+		args = append(args, exerciseName)
+	} else if targetMuscle != "" {
+		query += fmt.Sprintf(` where target_muscle ilike '%%' || $%d || '%%'`, 1)
+		args = append(args, targetMuscle)
+	} else {
+		h.Logger.Error("bad query parameter", "requestID", requestID)
+		httpx.Error(w, http.StatusBadRequest, "bad query parameter request", httpx.CodeInvalidInput)
+		return
+	}
+
+	query += ` order by created_at desc`
+
+	rows, err := h.DB.Query(r.Context(), query, args...)
+	if err != nil {
+		h.Logger.Error("failed query workout", "err", err, "requestID", requestID)
+		httpx.Error(w, http.StatusInternalServerError, "something went wrong, try again later", httpx.CodeInternalServer)
+		return
+	}
+
+	collection, err := pgx.CollectRows(rows, pgx.RowToStructByName[ExerciseResponse])
+	if err != nil {
+		httpx.Error(w, http.StatusInternalServerError, "something went wrong", httpx.CodeInternalServer)
+		return
+	}
+
+	if len(collection) == 0 {
+		httpx.Error(w, http.StatusNotFound, "no data found", httpx.CodeNotFound)
+		return
+	}
+
+	helper.SetResponse(w, http.StatusOK)
+	_ = json.NewEncoder(w).Encode(collection)
 }
