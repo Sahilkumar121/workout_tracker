@@ -12,6 +12,7 @@ import (
 	"github.com/Sahilkumar121/workout_tracker/internal/db"
 	"github.com/Sahilkumar121/workout_tracker/internal/handler"
 	"github.com/Sahilkumar121/workout_tracker/internal/middleware"
+	"golang.org/x/time/rate"
 )
 
 func main() {
@@ -55,7 +56,16 @@ func main() {
 	mux.Handle("GET /user/workout", middleware.Auth(http.HandlerFunc(workout.GetUserWorkouts)))
 
 	// middleware handler
-	requestIDHandler := middleware.RequestID(mux)
+	rateLimiter := middleware.NewRateLimiterHandler(
+		rate.Limit(5),  // 5 requests per second
+		10,             // burst size
+		100_000,        // maximum tracked IPs
+		10*time.Minute, // remove inactive IPs
+	)
+
+	rateLimiterHandler := rateLimiter.RateLimiterMiddleware(mux)
+	requestIDHandler := middleware.RequestID(rateLimiterHandler)
+
 	fmt.Println("server is starting ...")
 	ser := http.Server{
 		Addr:         ":" + cfg.Port,
