@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 
@@ -26,7 +25,7 @@ func NewExerciseRepository(logger *slog.Logger, db *pgxpool.Pool) *ExerciseRepos
 func (r *ExerciseRepository) InsertIntoExercise(
 	ctx context.Context,
 	req exercise.PostRequest,
-) (*exercise.Exercise, error) {
+) (exercise.Exercise, error) {
 
 	query := `
 		insert into exercises(name, description, muscle_group)
@@ -44,12 +43,52 @@ func (r *ExerciseRepository) InsertIntoExercise(
 	)
 
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("no row found %v\n", err)
-		}
-		return nil, fmt.Errorf("insertion into exercise failed %v\n", err)
+		return exercise.Exercise{}, fmt.Errorf("insertion into exercise failed %w", err)
 	}
 
 	r.Logger.Info("insertion into exercise successfully")
-	return &response, nil
+	return response, nil
+}
+
+func (r *ExerciseRepository) FindAllExercises(
+	ctx context.Context,
+) ([]exercise.Exercise, error) {
+
+	query := `select id, name, description, muscle_group, created_at from exercises;`
+
+	rows, err := r.DB.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("database query: %w", err)
+	}
+
+	defer rows.Close()
+
+	d, err := pgx.CollectRows(rows, pgx.RowToStructByName[exercise.Exercise])
+	if err != nil {
+		return nil, fmt.Errorf("collect row: %vw", err)
+	}
+
+	return d, nil
+}
+
+func (r *ExerciseRepository) FindExerciseById(
+	ctx context.Context,
+	id string,
+) (exercise.Exercise, error) {
+
+	query := `select id, name, description, muscle_group, created_at from exercises where id = $1;`
+
+	var response exercise.Exercise
+	if err := r.DB.QueryRow(ctx, query, id).Scan(
+		&response.Id,
+		&response.Name,
+		&response.Description,
+		&response.MuscleGroup,
+		&response.CreatedAt,
+	); err != nil {
+
+		return exercise.Exercise{}, fmt.Errorf("find exercise by id: %w", err)
+	}
+
+	return response, nil
 }

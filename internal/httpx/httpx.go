@@ -2,39 +2,39 @@ package httpx
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 )
 
-type customError string
-
 var (
-	ErrInternalError customError = "internal server error"
-	ErrNotFound      customError = "not found"
-	ErrBadRequest    customError = "bad request"
+	ErrInternalError = errors.New("internal server error")
+	ErrNotFound      = errors.New("not found")
+	ErrBadRequest    = errors.New("bad request")
+	ErrConflict      = errors.New("conflict data")
 )
 
 type errorStruct struct {
-	error customError
-	msg   string
+	Type string `json:"type"`
+	Msg  string `json:"msg"`
 }
 
 type errorEnvelope struct {
-	error errorStruct
+	Error errorStruct `json:"error"`
 }
 
-func HandlerError(w http.ResponseWriter, status int, msg string, error customError) {
+func HandlerError(w http.ResponseWriter, status int, msg string, errorType error) {
 
-	w.Header().Set("Context-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
 	if err := json.NewEncoder(w).Encode(errorEnvelope{
-		error: errorStruct{
-			error: error,
-			msg:   msg,
+		Error: errorStruct{
+			Type: errorType.Error(),
+			Msg:  msg,
 		},
 	}); err != nil {
 		slog.Error("httpx HandlerError encode failed", "err", err)
-		return
+
 	}
 }

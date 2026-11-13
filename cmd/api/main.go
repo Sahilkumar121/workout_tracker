@@ -113,6 +113,8 @@ func handleAPI(
 
 	// public api
 	mux.HandleFunc("POST /api/v1/exercise", exerciseHandler.PostExercise)
+	mux.HandleFunc("GET /api/v1/exercise", exerciseHandler.GetExercises)
+	mux.HandleFunc("GET /api/v1/exercise/{id}", exerciseHandler.GetExerciseById)
 }
 
 func main() {
