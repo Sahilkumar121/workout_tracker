@@ -1,7 +1,10 @@
+# Environment variables and secrets
 .env
 
-bin
-./bin.*
+# Build output
+/bin/
+/bin.*
 
-.idea
-.vscode
+# IDE settings
+.idea/
+.vscode/
