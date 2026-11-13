@@ -37,7 +37,7 @@ create table if not exists workouts(
     user_id uuid not null,
 
     constraint fk_workout_user
-        foreign key user_id references users(id)
+        foreign key (user_id) references users(id)
     on delete cascade,
 
     constraint ck_workout_completed
@@ -54,14 +54,14 @@ create table if not exists workout_exercises(
     exercise_id uuid not null,
     positions int not null check (positions > 0),
 
-    created_at timestamptz not null default now()
+    created_at timestamptz not null default now(),
 
     constraint fk_workout
-        foreign key workout_id references workouts(id)
+        foreign key (workout_id) references workouts(id)
     on delete cascade,
 
     constraint fk_exercise
-        foreign key exercise_id references exercises(id)
+        foreign key (exercise_id) references exercises(id)
     on delete restrict,
 
     constraint uq_workout_exercise
@@ -84,10 +84,10 @@ create table if not exists workout_sets(
     reps int not null check (reps > 0),
     weight_kg numeric(7,2) not null check (weight_kg > 0),
     
-    created_at timestamptz not null default now()
+    created_at timestamptz not null default now(),
 
     constraint fk_workout_exercise
-        foreign key workout_exercises_id references workout_exercises(id)
+        foreign key (workout_exercises_id) references workout_exercises(id)
     on delete cascade,
 
     constraint uq_workout_exercise_set_number
