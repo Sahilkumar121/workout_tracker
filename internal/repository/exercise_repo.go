@@ -3,22 +3,21 @@ package repository
 import (
 	"context"
 	"fmt"
-	"log/slog"
+	"strings"
 
 	"github.com/Sahilkumar121/workout_tracker/internal/handler/exercise"
+	"github.com/Sahilkumar121/workout_tracker/internal/httpx"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ExerciseRepository struct {
-	Logger *slog.Logger
-	DB     *pgxpool.Pool
+	DB *pgxpool.Pool
 }
 
-func NewExerciseRepository(logger *slog.Logger, db *pgxpool.Pool) *ExerciseRepository {
+func NewExerciseRepository(db *pgxpool.Pool) *ExerciseRepository {
 	return &ExerciseRepository{
-		Logger: logger,
-		DB:     db,
+		DB: db,
 	}
 }
 
@@ -46,7 +45,6 @@ func (r *ExerciseRepository) InsertIntoExercise(
 		return exercise.Exercise{}, fmt.Errorf("insertion into exercise failed %w", err)
 	}
 
-	r.Logger.Info("insertion into exercise successfully")
 	return response, nil
 }
 
@@ -87,8 +85,62 @@ func (r *ExerciseRepository) FindExerciseById(
 		&response.CreatedAt,
 	); err != nil {
 
-		return exercise.Exercise{}, fmt.Errorf("find exercise by id: %w", err)
+		return exercise.Exercise{}, err
 	}
 
 	return response, nil
+}
+
+func (r *ExerciseRepository) UpdateExerciseById(
+	ctx context.Context,
+	id string,
+	request exercise.PatchRequest,
+) (exercise.Exercise, error) {
+
+	var args []any
+	var updates []string
+
+	// check validation of each field
+	if request.Name != nil {
+		args = append(args, *request.Name)
+		updates = append(updates, fmt.Sprintf("name = $%d", len(args)))
+	}
+
+	if request.Description != nil {
+		args = append(args, *request.Description)
+		updates = append(updates, fmt.Sprintf("description = $%d", len(args)))
+	}
+
+	if request.MuscleGroup != nil {
+		args = append(args, *request.MuscleGroup)
+		updates = append(updates, fmt.Sprintf("muscle_group = $%d", len(args)))
+	}
+
+	// check if user provided at least one field else return error
+	if len(updates) == 0 {
+		return exercise.Exercise{}, httpx.ErrNoFieldsToUpdate
+	}
+
+	args = append(args, id)
+
+	query := fmt.Sprintf(`
+		update exercises
+		set %s
+		where id = $%d
+		returning id, name, description, muscle_group, created_at`,
+		strings.Join(updates, ", "), len(args),
+	)
+
+	var exerciseRes exercise.Exercise
+	if err := r.DB.QueryRow(ctx, query, args...).Scan(
+		&exerciseRes.Id,
+		&exerciseRes.Name,
+		&exerciseRes.Description,
+		&exerciseRes.MuscleGroup,
+		&exerciseRes.CreatedAt,
+	); err != nil {
+		return exercise.Exercise{}, err
+	}
+
+	return exerciseRes, nil
 }

@@ -4,11 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"strings"
 
 	"github.com/Sahilkumar121/workout_tracker/internal/handler/exercise"
-	"github.com/Sahilkumar121/workout_tracker/internal/httpx"
-	"github.com/google/uuid"
 )
 
 type ExerciseRepository interface {
@@ -24,6 +21,12 @@ type ExerciseRepository interface {
 	FindExerciseById(
 		ctx context.Context,
 		id string,
+	) (exercise.Exercise, error)
+
+	UpdateExerciseById(
+		ctx context.Context,
+		id string,
+		request exercise.PatchRequest,
 	) (exercise.Exercise, error)
 }
 
@@ -43,12 +46,6 @@ func (s *ExerciseServiceHandler) CreateExercise(
 	ctx context.Context,
 	exerciseBodyReq exercise.PostRequest,
 ) (exercise.Exercise, error) {
-
-	if strings.TrimSpace(exerciseBodyReq.Name) == "" ||
-		strings.TrimSpace(exerciseBodyReq.Description) == "" ||
-		strings.TrimSpace(exerciseBodyReq.MuscleGroup) == "" {
-		return exercise.Exercise{}, httpx.ErrBadRequest
-	}
 
 	response, err := s.Repo.InsertIntoExercise(ctx, exerciseBodyReq)
 	if err != nil {
@@ -75,17 +72,25 @@ func (s *ExerciseServiceHandler) SearchExerciseByID(
 	id string,
 ) (exercise.Exercise, error) {
 
-	if strings.TrimSpace(id) == "" {
-		return exercise.Exercise{}, fmt.Errorf("id can't be empty")
-	}
-
-	if _, err := uuid.Parse(id); err != nil {
-		return exercise.Exercise{}, fmt.Errorf("invalid id: %w", err)
-	}
-
 	d, err := s.Repo.FindExerciseById(ctx, id)
+
 	if err != nil {
-		return exercise.Exercise{}, fmt.Errorf("search exercise by id: %w", err)
+		return exercise.Exercise{}, err
+	}
+
+	return d, nil
+}
+
+func (s *ExerciseServiceHandler) UpdateExerciseById(
+	ctx context.Context,
+	id string,
+	patchReq exercise.PatchRequest,
+) (exercise.Exercise, error) {
+
+	d, err := s.Repo.UpdateExerciseById(ctx, id, patchReq)
+
+	if err != nil {
+		return exercise.Exercise{}, err
 	}
 
 	return d, nil

@@ -103,7 +103,7 @@ func handleAPI(
 ) {
 
 	// repos
-	exerciseRepo := repository.NewExerciseRepository(logger, pool)
+	exerciseRepo := repository.NewExerciseRepository(pool)
 
 	// services
 	exerciseService := service.NewExerciseServiceHandler(logger, exerciseRepo)
@@ -115,6 +115,7 @@ func handleAPI(
 	mux.HandleFunc("POST /api/v1/exercise", exerciseHandler.PostExercise)
 	mux.HandleFunc("GET /api/v1/exercise", exerciseHandler.GetExercises)
 	mux.HandleFunc("GET /api/v1/exercise/{id}", exerciseHandler.GetExerciseById)
+	// TODO: create api for update
 }
 
 func main() {

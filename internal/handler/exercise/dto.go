@@ -19,3 +19,9 @@ type PostRequest struct {
 	Description string `json:"description" validate:"required"`
 	MuscleGroup string `json:"muscle_group" validate:"required"`
 }
+
+type PatchRequest struct {
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+	MuscleGroup *string `json:"muscle_group"`
+}
