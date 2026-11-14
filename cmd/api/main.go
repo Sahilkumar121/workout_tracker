@@ -14,6 +14,7 @@ import (
 	"github.com/Sahilkumar121/workout_tracker/internal/config"
 	"github.com/Sahilkumar121/workout_tracker/internal/database"
 	"github.com/Sahilkumar121/workout_tracker/internal/handler/exercise"
+	"github.com/Sahilkumar121/workout_tracker/internal/middleware"
 	"github.com/Sahilkumar121/workout_tracker/internal/repository"
 	"github.com/Sahilkumar121/workout_tracker/internal/service"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -30,9 +31,10 @@ func createServer(
 
 	handleAPI(mux, pool, logger)
 
+	requestID := middleware.RequestId(mux)
 	return &http.Server{
 		Addr:    ":" + cfg.Port,
-		Handler: mux,
+		Handler: requestID,
 	}
 }
 
@@ -115,7 +117,8 @@ func handleAPI(
 	mux.HandleFunc("POST /api/v1/exercise", exerciseHandler.PostExercise)
 	mux.HandleFunc("GET /api/v1/exercise", exerciseHandler.GetExercises)
 	mux.HandleFunc("GET /api/v1/exercise/{id}", exerciseHandler.GetExerciseById)
-	// TODO: create api for update
+	mux.HandleFunc("PATCH /api/v1/exercise/{id}", exerciseHandler.PatchExerciseById)
+	mux.HandleFunc("DELETE /api/v1/exercise/{id}", exerciseHandler.DeleteExerciseById)
 }
 
 func main() {

@@ -8,6 +8,7 @@ import (
 	"github.com/Sahilkumar121/workout_tracker/internal/handler/exercise"
 	"github.com/Sahilkumar121/workout_tracker/internal/httpx"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -143,4 +144,19 @@ func (r *ExerciseRepository) UpdateExerciseById(
 	}
 
 	return exerciseRes, nil
+}
+
+func (r *ExerciseRepository) DeleteExercise(
+	ctx context.Context,
+	id string,
+) (pgconn.CommandTag, error) {
+
+	query := `delete from exercises where id = $1`
+
+	c, err := r.DB.Exec(ctx, query, id)
+	if err != nil {
+		return pgconn.CommandTag{}, err
+	}
+
+	return c, nil
 }

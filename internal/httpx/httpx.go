@@ -41,6 +41,5 @@ func HandlerError(w http.ResponseWriter, status int, msg string, errorType custo
 		},
 	}); err != nil {
 		slog.Error("httpx HandlerError encode failed", "err", err)
-
 	}
 }

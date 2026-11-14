@@ -4,8 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/Sahilkumar121/workout_tracker/internal/handler/exercise"
+	"github.com/Sahilkumar121/workout_tracker/internal/httpx"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type ExerciseRepository interface {
@@ -28,6 +32,11 @@ type ExerciseRepository interface {
 		id string,
 		request exercise.PatchRequest,
 	) (exercise.Exercise, error)
+
+	DeleteExercise(
+		ctx context.Context,
+		id string,
+	) (pgconn.CommandTag, error)
 }
 
 type ExerciseServiceHandler struct {
@@ -40,6 +49,18 @@ func NewExerciseServiceHandler(logger *slog.Logger, repo ExerciseRepository) *Ex
 		Logger: logger,
 		Repo:   repo,
 	}
+}
+
+func (s *ExerciseServiceHandler) ValidateExerciseId(
+	id string,
+) error {
+
+	// check id path query id was uuid format else return 400
+	if _, err := uuid.Parse(id); err != nil || strings.TrimSpace(id) == "" {
+		return httpx.ErrBadRequest
+	}
+
+	return nil
 }
 
 func (s *ExerciseServiceHandler) CreateExercise(
@@ -94,4 +115,16 @@ func (s *ExerciseServiceHandler) UpdateExerciseById(
 	}
 
 	return d, nil
+}
+
+func (s *ExerciseServiceHandler) DeleteExerciseById(
+	ctx context.Context,
+	id string,
+) (pgconn.CommandTag, error) {
+
+	c, err := s.Repo.DeleteExercise(ctx, id)
+	if err != nil {
+		return pgconn.CommandTag{}, err
+	}
+	return c, nil
 }
