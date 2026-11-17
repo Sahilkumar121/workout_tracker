@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	Port  string
-	DbUrl string
+	Port      string
+	DbUrl     string
+	SecretKey string
 }
 
 func MustLoad() Config {
@@ -25,6 +26,11 @@ func MustLoad() Config {
 	databaseUrl := os.Getenv("ENV_DATABASE_URL")
 	if strings.TrimSpace(databaseUrl) == "" {
 		panic("Database url is required")
+	}
+
+	secreteKey := os.Getenv("ENV_SECRETKEY")
+	if strings.TrimSpace(secreteKey) == "" {
+		panic("Secret key is required")
 	}
 
 	return Config{

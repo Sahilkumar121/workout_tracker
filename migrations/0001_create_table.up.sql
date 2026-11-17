@@ -23,7 +23,7 @@ create table if not exists exercises(
 
 -- WORKOUT : store user workout
 -- a user can have multiple workout
--- One to many relationship
+-- One-to-many relationship
 create table if not exists workouts(
     id uuid primary key default gen_random_uuid(),
     title varchar(50) not null,
@@ -46,7 +46,7 @@ create table if not exists workouts(
 
 -- WORKOUT EXERCISES : store the workout and exercise
 -- many workout can have many exercise
--- many to many relation
+-- many-to-many relation
 create table if not exists workout_exercises(
     id uuid primary key default gen_random_uuid(),
 

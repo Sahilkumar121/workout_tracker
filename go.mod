@@ -4,10 +4,12 @@ go 1.27.3
 
 require (
 	github.com/go-playground/validator/v10 v10.30.6
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/golang-migrate/migrate/v4 v4.20.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.13.0
 	github.com/joho/godotenv v1.5.1
+	golang.org/x/crypto v0.59.0
 )
 
 require (
@@ -19,7 +21,6 @@ require (
 	github.com/jackc/puddle/v2 v2.2.3 // indirect
 	github.com/leodido/go-urn v1.5.0 // indirect
 	github.com/lib/pq v1.12.3 // indirect
-	golang.org/x/crypto v0.59.0 // indirect
 	golang.org/x/sync v0.25.0 // indirect
 	golang.org/x/sys v0.50.0 // indirect
 	golang.org/x/text v0.44.0 // indirect

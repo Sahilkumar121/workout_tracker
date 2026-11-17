@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"strings"
 
 	"github.com/Sahilkumar121/workout_tracker/internal/handler/exercise"
@@ -40,14 +39,12 @@ type ExerciseRepository interface {
 }
 
 type ExerciseServiceHandler struct {
-	Logger *slog.Logger
-	Repo   ExerciseRepository
+	Repo ExerciseRepository
 }
 
-func NewExerciseServiceHandler(logger *slog.Logger, repo ExerciseRepository) *ExerciseServiceHandler {
+func NewExerciseServiceHandler(repo ExerciseRepository) *ExerciseServiceHandler {
 	return &ExerciseServiceHandler{
-		Logger: logger,
-		Repo:   repo,
+		Repo: repo,
 	}
 }
 

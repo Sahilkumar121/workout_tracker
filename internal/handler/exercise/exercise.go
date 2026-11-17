@@ -3,14 +3,12 @@ package exercise
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"log/slog"
 	"net/http"
 
 	"github.com/Sahilkumar121/workout_tracker/internal/httpx"
 	"github.com/Sahilkumar121/workout_tracker/internal/middleware"
 	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -62,53 +60,6 @@ func NewExerciseHandler(
 	}
 }
 
-func (h *Handler) HandleExerciseError(w http.ResponseWriter, err error) {
-
-	var pgErr *pgconn.PgError
-
-	switch {
-	case errors.Is(err, httpx.ErrBadRequest):
-		httpx.HandlerError(
-			w,
-			http.StatusBadRequest,
-			"please provide proper info",
-			httpx.ErrBadRequest,
-		)
-
-	case errors.Is(err, httpx.ErrNoFieldsToUpdate):
-		httpx.HandlerError(
-			w,
-			http.StatusBadRequest,
-			"please provided at least one field",
-			httpx.ErrNoFieldsToUpdate,
-		)
-
-	case errors.Is(err, pgx.ErrNoRows):
-		httpx.HandlerError(
-			w,
-			http.StatusNotFound,
-			"no data to be found",
-			httpx.ErrNotFound,
-		)
-
-	case errors.As(err, &pgErr) && pgErr.Code == "23505":
-		httpx.HandlerError(
-			w,
-			http.StatusConflict,
-			"exercise already exist",
-			httpx.ErrConflict,
-		)
-
-	default:
-		httpx.HandlerError(
-			w,
-			http.StatusInternalServerError,
-			"server error, try again",
-			httpx.ErrInternalError,
-		)
-	}
-}
-
 // PostExercise - HTTP POST req for exercise
 func (h *Handler) PostExercise(
 	w http.ResponseWriter, r *http.Request,
@@ -121,21 +72,21 @@ func (h *Handler) PostExercise(
 	//* decode the request data and return bad request if error
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.Logger.Error("failed post exercise decode", "error", err, "requestID", requestID)
-		h.HandleExerciseError(w, err)
+		httpx.HandleResponseError(w, err)
 		return
 	}
 
 	// validate the PostRequest
 	if err := h.validate.Struct(req); err != nil {
 		h.Logger.Error("create exercise failed", "err", err)
-		h.HandleExerciseError(w, err)
+		httpx.HandleResponseError(w, err)
 		return
 	}
 
 	response, err := h.Service.CreateExercise(r.Context(), req)
 	if err != nil {
 		h.Logger.Error("create exercise failed", "err", err)
-		h.HandleExerciseError(w, err)
+		httpx.HandleResponseError(w, err)
 		return
 	}
 
@@ -155,7 +106,7 @@ func (h *Handler) GetExercises(
 	d, err := h.Service.FindAllExercise(r.Context())
 	if err != nil {
 		h.Logger.Error("failed get exercises", "err", err)
-		h.HandleExerciseError(w, err)
+		httpx.HandleResponseError(w, err)
 		return
 	}
 
@@ -174,14 +125,14 @@ func (h *Handler) GetExerciseById(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.Service.ValidateExerciseId(reqId); err != nil {
 		h.Logger.Error("get exercise by id", "err", err)
-		h.HandleExerciseError(w, err)
+		httpx.HandleResponseError(w, err)
 		return
 	}
 
 	d, err := h.Service.SearchExerciseByID(r.Context(), reqId)
 	if err != nil {
 		h.Logger.Error("failed get exercise by id", "err", err)
-		h.HandleExerciseError(w, err)
+		httpx.HandleResponseError(w, err)
 		return
 	}
 
@@ -201,7 +152,7 @@ func (h *Handler) PatchExerciseById(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.Service.ValidateExerciseId(exerciseId); err != nil {
 		h.Logger.Error("patch exercise by id", "err", err)
-		h.HandleExerciseError(w, err)
+		httpx.HandleResponseError(w, err)
 		return
 	}
 
@@ -210,14 +161,14 @@ func (h *Handler) PatchExerciseById(w http.ResponseWriter, r *http.Request) {
 	// decode from request
 	if err := json.NewDecoder(r.Body).Decode(&patchReq); err != nil {
 		h.Logger.Error("failed decode patchReq", "err", err)
-		h.HandleExerciseError(w, err)
+		httpx.HandleResponseError(w, err)
 		return
 	}
 
 	d, err := h.Service.UpdateExerciseById(r.Context(), exerciseId, patchReq)
 	if err != nil {
 		h.Logger.Error("patch exercise by id", "err", err)
-		h.HandleExerciseError(w, err)
+		httpx.HandleResponseError(w, err)
 		return
 	}
 
@@ -239,14 +190,14 @@ func (h *Handler) DeleteExerciseById(
 
 	if err := h.Service.ValidateExerciseId(exerciseId); err != nil {
 		h.Logger.Error("patch exercise by id", "err", err)
-		h.HandleExerciseError(w, err)
+		httpx.HandleResponseError(w, err)
 		return
 	}
 
 	c, err := h.Service.DeleteExerciseById(r.Context(), exerciseId)
 	if err != nil {
 		h.Logger.Error("delete exercise by id", "err", err)
-		h.HandleExerciseError(w, err)
+		httpx.HandleResponseError(w, err)
 		return
 	}
 

@@ -14,6 +14,7 @@ import (
 	"github.com/Sahilkumar121/workout_tracker/internal/config"
 	"github.com/Sahilkumar121/workout_tracker/internal/database"
 	"github.com/Sahilkumar121/workout_tracker/internal/handler/exercise"
+	"github.com/Sahilkumar121/workout_tracker/internal/handler/user"
 	"github.com/Sahilkumar121/workout_tracker/internal/middleware"
 	"github.com/Sahilkumar121/workout_tracker/internal/repository"
 	"github.com/Sahilkumar121/workout_tracker/internal/service"
@@ -29,7 +30,7 @@ func createServer(
 
 	mux := http.NewServeMux()
 
-	handleAPI(mux, pool, logger)
+	handleAPI(mux, pool, logger, cfg)
 
 	requestID := middleware.RequestId(mux)
 	return &http.Server{
@@ -102,18 +103,35 @@ func handleAPI(
 	mux *http.ServeMux,
 	pool *pgxpool.Pool,
 	logger *slog.Logger,
+	cfg config.Config,
 ) {
 
 	// repos
 	exerciseRepo := repository.NewExerciseRepository(pool)
+	userRepo := repository.NewUserRepository(pool)
 
 	// services
-	exerciseService := service.NewExerciseServiceHandler(logger, exerciseRepo)
+	exerciseService := service.NewExerciseServiceHandler(exerciseRepo)
+	userService := service.NewUserService(userRepo)
 
 	// handler
 	exerciseHandler := exercise.NewExerciseHandler(logger, exerciseService)
+	userHandler := user.NewUserHandler(logger, userService, []byte(cfg.SecretKey))
 
 	// public api
+
+	// user
+	mux.HandleFunc("POST /api/v1/user/register", userHandler.RegisterUser)
+	mux.HandleFunc("POST /api/v1/user/login", userHandler.LoginUser)
+	mux.Handle(
+		"GET /api/v1/user/me",
+		middleware.AuthenticateUser(
+			[]byte(cfg.SecretKey),
+			http.HandlerFunc(userHandler.Me),
+		),
+	)
+
+	// exercise
 	mux.HandleFunc("POST /api/v1/exercise", exerciseHandler.PostExercise)
 	mux.HandleFunc("GET /api/v1/exercise", exerciseHandler.GetExercises)
 	mux.HandleFunc("GET /api/v1/exercise/{id}", exerciseHandler.GetExerciseById)
