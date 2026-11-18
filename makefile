@@ -1,4 +1,4 @@
-.Phony: build run
+.Phony: build run migrate-up migrate-down
 
 build:
 	@mkdir -p ./bin
@@ -12,3 +12,7 @@ migrate-up:
 
 migrate-down:
 	@go run ./cmd/migrate down
+
+docker-build:
+	@mkdir -p ./bin
+	@go build -o ./bin/main ./cmd/api

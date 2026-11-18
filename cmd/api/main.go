@@ -19,6 +19,7 @@ import (
 	"github.com/Sahilkumar121/workout_tracker/internal/repository"
 	"github.com/Sahilkumar121/workout_tracker/internal/service"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/time/rate"
 )
 
 // createServer return http.Server
@@ -29,13 +30,15 @@ func createServer(
 ) *http.Server {
 
 	mux := http.NewServeMux()
+	rateLimiter := middleware.NewIPRateLimiter(rate.Limit(5), 10, 100_000, 10*time.Minute)
 
 	handleAPI(mux, pool, logger, cfg)
 
 	requestID := middleware.RequestId(mux)
+	rateLimitMiddleware := rateLimiter.RateLimitMiddleware(requestID)
 	return &http.Server{
 		Addr:    ":" + cfg.Port,
-		Handler: requestID,
+		Handler: rateLimitMiddleware,
 	}
 }
 

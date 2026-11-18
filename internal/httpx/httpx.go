@@ -29,11 +29,15 @@ var (
 	ErrArgonVersion customError = "argon version wrong"
 
 	// access token
-	ErrUnauthorized       customError = "unauthorized"
-	ErrWrongSigningMethod customError = "wrong signed method"
-	ErrInvalidToken       customError = "invalid token"
-	ErrTokenExpired       customError = "token expired"
+	ErrUnauthorized        customError = "unauthorized"
+	ErrWrongSigningMethod  customError = "wrong signed method"
+	ErrInvalidToken        customError = "invalid token"
+	ErrTokenExpired        customError = "token expired"
 	ErrInvalidPasswordHash customError = "invalid password hash"
+
+	// service
+	ErrServiceUnavailable customError = "service unavailable"
+	ErrTooManyRequest     customError = "too many request"
 )
 
 type errorStruct struct {
@@ -64,6 +68,23 @@ func HandleResponseError(w http.ResponseWriter, err error) {
 	var pgErr *pgconn.PgError
 
 	switch {
+
+	case errors.Is(err, ErrTooManyRequest):
+		HandlerError(
+			w,
+			http.StatusTooManyRequests,
+			"Too many request, please try again after sometime",
+			ErrTooManyRequest,
+		)
+
+	case errors.Is(err, ErrServiceUnavailable):
+		HandlerError(
+			w,
+			http.StatusServiceUnavailable,
+			"server is temporary down",
+			ErrServiceUnavailable,
+		)
+
 	case errors.Is(err, ErrBadRequest):
 		HandlerError(
 			w,

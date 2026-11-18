@@ -1,0 +1,10 @@
+services:
+  api:
+    image: workout_tracker/app:1.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: workout_tracker/app
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
